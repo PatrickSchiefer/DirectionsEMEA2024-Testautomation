@@ -1,0 +1,44 @@
+{
+  "id": "4b393db7-6d08-48cf-9394-e4db7e974f35",
+  "name": "DemoTestApp",
+  "publisher": "Patrick Schiefer",
+  "version": "1.0.0.0",
+  "brief": "",
+  "description": "",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "",
+  "logo": "",
+  "dependencies": [
+    {
+      "version": "22.0.0.0",
+      "publisher": "Microsoft",
+      "name": "Library Assert",
+      "id": "dd0be2ea-f733-4d65-bb34-a28f4624fb14"
+    },
+    {
+      "version": "22.0.0.0",
+      "publisher": "Microsoft",
+      "name": "Any",
+      "id": "e7320ebb-08b3-4406-b1ec-b4927d3e280b"
+    }
+  ],
+  "screenshots": [],
+  "platform": "1.0.0.0",
+  "application": "22.0.0.0",
+  "idRanges": [
+    {
+      "from": 52000,
+      "to": 53000
+    }
+  ],
+  "features": [
+    "NoImplicitWith"
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": false,
+    "includeSourceInSymbolFile": false
+  }
+}
