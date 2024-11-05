@@ -12,21 +12,27 @@
   "logo": "",
   "dependencies": [
     {
-      "version": "22.0.0.0",
+      "id": "4988c7c7-c631-4377-a6e5-4d70032631a7",
+      "name": "DemoApp",
+      "publisher": "Patrick Schiefer",
+      "version": "1.0.0.0"
+    },
+    {
+      "version": "25.0.0.0",
       "publisher": "Microsoft",
       "name": "Library Assert",
       "id": "dd0be2ea-f733-4d65-bb34-a28f4624fb14"
     },
     {
-      "version": "22.0.0.0",
+      "version": "25.0.0.0",
       "publisher": "Microsoft",
       "name": "Any",
       "id": "e7320ebb-08b3-4406-b1ec-b4927d3e280b"
     }
   ],
   "screenshots": [],
-  "platform": "1.0.0.0",
-  "application": "22.0.0.0",
+  "platform": "25.0.0.0",
+  "application": "25.0.0.0",
   "idRanges": [
     {
       "from": 52000,
