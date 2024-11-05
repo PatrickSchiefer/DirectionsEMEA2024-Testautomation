@@ -1,0 +1,88 @@
+name: ' Increment Version Number'
+
+run-name: "Increment Version Number in [${{ github.ref_name }}]"
+
+on:
+  workflow_dispatch:
+    inputs:
+      projects:
+        description: Comma-separated list of project name patterns if the repository is setup for multiple projects (default is * for all projects)
+        required: false
+        default: '*'
+      versionNumber:
+        description: Updated Version Number. Use Major.Minor for absolute change, use +Major.Minor for incremental change.
+        required: true
+      directCommit:
+        description: Direct Commit?
+        type: boolean
+        default: false
+      useGhTokenWorkflow:
+        description: Use GhTokenWorkflow for PR/Commit?
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: write
+  id-token: write
+  pull-requests: write
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  ALGoOrgSettings: ${{ vars.ALGoOrgSettings }}
+  ALGoRepoSettings: ${{ vars.ALGoRepoSettings }}
+
+jobs:
+  IncrementVersionNumber:
+    needs: [ ]
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Dump Workflow Information
+        uses: freddydk/AL-Go/Actions/DumpWorkflowInfo@customize
+        with:
+          shell: pwsh
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Initialize the workflow
+        id: init
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@customize
+        with:
+          shell: pwsh
+
+      - name: Read settings
+        uses: freddydk/AL-Go/Actions/ReadSettings@customize
+        with:
+          shell: pwsh
+
+      - name: Read secrets
+        id: ReadSecrets
+        uses: freddydk/AL-Go/Actions/ReadSecrets@customize
+        with:
+          shell: pwsh
+          gitHubSecrets: ${{ toJson(secrets) }}
+          getSecrets: 'TokenForPush'
+          useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
+
+      - name: Increment Version Number
+        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@customize
+        with:
+          shell: pwsh
+          token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
+          projects: ${{ github.event.inputs.projects }}
+          versionNumber: ${{ github.event.inputs.versionNumber }}
+          directCommit: ${{ github.event.inputs.directCommit }}
+
+      - name: Finalize the workflow
+        if: always()
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@customize
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          shell: pwsh
+          telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
+          currentJobContext: ${{ toJson(job) }}
