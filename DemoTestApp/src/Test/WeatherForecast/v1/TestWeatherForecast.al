@@ -25,7 +25,7 @@ codeunit 52000 TestWeatherForecast
     begin
         GetWeatherForecast.GetWeatherForecast(WeatherForecast);
         Assert.AreEqual(Today(), WeatherForecast.Date, 'Date is not today');
-        //Assert.AreEqual('HOT', WeatherForecast.Weather, 'Weather is not HOT');
-        Assert.IsTrue((WeatherForecast.Weather in ['Freezing', 'Mild', 'Hot']), 'Weather is not Freezing, Mild or Cold');
+        Assert.AreEqual('HOT', WeatherForecast.Weather, 'Weather is not HOT');
+
     end;
 }

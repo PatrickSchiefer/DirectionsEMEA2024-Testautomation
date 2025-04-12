@@ -1,8 +1,8 @@
 namespace WeatherForecast.v2;
 
-using WeatherForecast;
+using System.RestClient;
 
 interface IGetWeatherForecast
 {
-    procedure GetWeatherForecast(var WeatherForecast: Record WeatherForecast);
+    procedure GetWeatherForecast(): Codeunit "Http Response Message";
 }
