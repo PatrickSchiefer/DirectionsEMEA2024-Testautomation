@@ -48,6 +48,7 @@
   "features": [
     "NoImplicitWith"
   ],
+  "runtime": "14.1",
   "resourceExposurePolicy": {
     "allowDebugging": true,
     "allowDownloadingSource": false,

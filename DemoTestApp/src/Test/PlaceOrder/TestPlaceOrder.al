@@ -48,6 +48,7 @@ codeunit 52020 PlaceOrderTest
         result: Text;
         Assert: Codeunit "Library Assert";
     begin
+        // GIVEN purchase order header
         PlaceOrder.initialize(MockPlaceOrderAPIGetJSON);
         PurchaseLibrary.CreatePurchaseOrder(rec);
         rec."Buy-from Vendor No." := '1';
