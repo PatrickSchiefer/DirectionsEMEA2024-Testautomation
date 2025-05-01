@@ -121,3 +121,33 @@ jobs:
           shell: pwsh
           telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           currentJobContext: ${{ toJson(job) }}
+
+  CustomJob-CreateAlpaca-Container:
+    if: ${{ always() }}
+    runs-on: [ ubuntu-latest ]
+    permissions: read-all
+    outputs:
+      containerID: ${{ steps.CreateContainer.outputs.containerID }}
+      containerUser: ${{ steps.CreateContainer.outputs.containerUser }}
+      containerPassword: ${{ steps.CreateContainer.outputs.containerPassword }}
+      containerURL: ${{ steps.CreateContainer.outputs.containerURL }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: CreateContainer
+        name: Create COSMO Alpaca Container
+        shell: pwsh
+        run: |
+          ./.alpaca/PowerShell/Create-AlpacaContainer.ps1 -token "${{ secrets.GITHUB_TOKEN }}"
+
+  CustomJob-RemoveAlpaca-Container:
+    needs: [ CustomJob-CreateAlpaca-Container, Build ]
+    if: ${{ always() }}
+    runs-on: [ ubuntu-latest ]
+    env:
+      needsContext:  ${{ toJson(needs) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove COSMO Alpaca Container
+        shell: pwsh
+        run: |
+          ./.alpaca/PowerShell/Remove-AlpacaContainer.ps1 -token "${{ secrets.GITHUB_TOKEN }}"

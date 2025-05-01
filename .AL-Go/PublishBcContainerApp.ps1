@@ -1,7 +1,35 @@
 Param([Hashtable]$parameters) 
 
 $Needs=$ENV:NeedsContext | ConvertFrom-Json
-$containerConfig = $Needs."CUSTOM-CreateAlpaca-Container".outputs
+$containerConfig = $Needs."CustomJob-CreateAlpaca-Container".outputs
+
+if ($parameters.appFile.GetType().BaseType.Name -eq 'Array') {
+    # Check if current run is installing dependenciy apps
+    # Dependency apps are already installed and should be skipped
+    $equal = $true
+    for ($i = 0; $i -lt $appsBeforeApps.Count; $i++) {
+        if ($appsBeforeApps[$i] -ne $parameters.appFile[$i]) {
+            $equal = $false
+            break
+        }
+    }
+
+    if (-not $equal) {
+        #check second dependency array
+        $equal = $true
+        for ($i = 0; $i -lt $appsBeforeTestApps.Count; $i++) {
+            if ($appsBeforeTestApps[$i] -ne $parameters.appFile[$i]) {
+                $equal = $false
+                break
+            }
+        }
+    }
+
+    if ($equal) {
+        Write-Host "Skip apps before apps/testapps because they are already handled by Alpaca"
+        return
+    }
+}
 
 if (!$Env:ContainerStarted){
     Write-Host "::group::Wait for image to be ready"

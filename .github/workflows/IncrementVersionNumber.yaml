@@ -34,9 +34,6 @@ env:
   ALGoOrgSettings: ${{ vars.ALGoOrgSettings }}
   ALGoRepoSettings: ${{ vars.ALGoRepoSettings }}
 
-permissions:
-  contents: read
-
 jobs:
   IncrementVersionNumber:
     needs: [ ]

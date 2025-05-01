@@ -5,5 +5,6 @@
   "runs-on": "ubuntu-latest",
   "shell": "pwsh",
   "githubRunner": "ubuntu-latest",
-  "githubRunnerShell": "pwsh"
+  "githubRunnerShell": "pwsh",
+  "templateSha": "26e134ea742638dcdfe16251ebdc8d00d07120b0"
 }
