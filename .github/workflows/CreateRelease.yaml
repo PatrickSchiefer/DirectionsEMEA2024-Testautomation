@@ -1,11 +1,14 @@
 name: ' Create release'
 run-name: "Create release - Version ${{ inputs.tag }}"
 
+concurrency:
+  group: ${{ github.workflow }}
+
 on:
   workflow_dispatch:
     inputs:
-      appVersion:
-        description: App version to promote to release (default is latest)
+      buildVersion:
+        description: Build version to promote to release (default is latest)
         required: false
         default: 'latest'
       name:
@@ -16,14 +19,14 @@ on:
         description: Tag of this release (needs to be semantic version string https://semver.org, ex. 1.0.0)
         required: true
         default: ''
-      prerelease:
-        description: Prerelease?
-        type: boolean
-        default: false
-      draft:
-        description: Draft?
-        type: boolean
-        default: false
+      releaseType:
+        description: Release, prerelease or draft?
+        type: choice
+        options:
+          - Release
+          - Prerelease
+          - Draft
+        default: Release
       createReleaseBranch:
         description: Create Release Branch?
         type: boolean
@@ -33,9 +36,13 @@ on:
         type: string
         default: release/
       updateVersionNumber:
-        description: New Version Number in main branch. Use Major.Minor for absolute change, use +Major.Minor for incremental change.
+        description: New Version Number in main branch. Use Major.Minor (optionally add .Build for versioningstrategy 3) for absolute change, or +1, +0.1 (or +0.0.1 for versioningstrategy 3) incremental change.
         required: false
         default: ''
+      skipUpdatingDependencies:
+        description: Skip updating dependency version numbers in all apps.
+        type: boolean
+        default: false
       directCommit:
         description: Direct Commit?
         type: boolean
@@ -50,8 +57,6 @@ permissions:
   contents: write
   id-token: write
   pull-requests: write
-
-concurrency: release
 
 defaults:
   run:
@@ -99,7 +104,7 @@ jobs:
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
-          getSecrets: 'TokenForPush,GhTokenWorkflow'
+          getSecrets: 'TokenForPush,ghTokenWorkflow'
           useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
 
       - name: Determine Projects
@@ -112,14 +117,14 @@ jobs:
         uses: freddydk/AL-Go/Actions/CheckForUpdates@customize
         with:
           shell: pwsh
-          token: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).ghTokenWorkflow }}
           templateUrl: ${{ env.templateUrl }}
+          token: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).ghTokenWorkflow }}
           downloadLatest: true
 
       - name: Analyze Artifacts
         id: analyzeartifacts
         env:
-          _appVersion: ${{ github.event.inputs.appVersion }}
+          _buildVersion: ${{ github.event.inputs.buildVersion }}
         run: |
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
           $projects = '${{ steps.determineProjects.outputs.ProjectsJson }}' | ConvertFrom-Json
@@ -157,14 +162,14 @@ jobs:
             }
             $refname = "$ENV:GITHUB_REF_NAME".Replace('/','_')
             Write-Host "Analyzing artifacts for project $project"
-            $appVersion = "$env:_appVersion"
-            if ($appVersion -eq "latest") {
+            $buildVersion = "$env:_buildVersion"
+            if ($buildVersion -eq "latest") {
               Write-Host "Grab latest"
-              $artifact = $allArtifacts | Where-Object { $_.name -like "$project-$refname-Apps-*" -or $_.name -like "$project-$refname-PowerPlatformSolution-*" } | Select-Object -First 1
+              $artifact = $allArtifacts | Where-Object { $_.name -like "$project-$refname-Apps-*.*.*.*" -or $_.name -like "$project-$refname-PowerPlatformSolution-*.*.*.*" } | Select-Object -First 1
             }
             else {
-              Write-Host "Search for $project-$refname-Apps-$appVersion or $project-$refname-PowerPlatformSolution-$appVersion"
-              $artifact = $allArtifacts | Where-Object { $_.name -eq "$project-$refname-Apps-$appVersion"-or $_.name -eq "$project-$refname-PowerPlatformSolution-$appVersion" } | Select-Object -First 1
+              Write-Host "Search for $project-$refname-Apps-$buildVersion or $project-$refname-PowerPlatformSolution-$buildVersion"
+              $artifact = $allArtifacts | Where-Object { $_.name -eq "$project-$refname-Apps-$buildVersion"-or $_.name -eq "$project-$refname-PowerPlatformSolution-$buildVersion" } | Select-Object -First 1
             }
             if ($artifact) {
               $startIndex = $artifact.name.LastIndexOf('-') + 1
@@ -207,6 +212,7 @@ jobs:
         uses: freddydk/AL-Go/Actions/CreateReleaseNotes@customize
         with:
           shell: pwsh
+          buildVersion: ${{ github.event.inputs.buildVersion }}
           tag_name: ${{ github.event.inputs.tag }}
           target_commitish: ${{ steps.analyzeartifacts.outputs.commitish }}
 
@@ -225,8 +231,8 @@ jobs:
               tag_name: '${{ github.event.inputs.tag }}',
               name: '${{ github.event.inputs.name }}',
               body: bodyMD.replaceAll('\\n','\n').replaceAll('%0A','\n').replaceAll('%0D','\n').replaceAll('%25','%'),
-              draft: ${{ github.event.inputs.draft=='true' }},
-              prerelease: ${{ github.event.inputs.prerelease=='true' }},
+              draft: ${{ github.event.inputs.releaseType=='Draft' }},
+              prerelease: ${{ github.event.inputs.releaseType=='Prerelease' }},
               make_latest: 'legacy',
               target_commitish: '${{ steps.analyzeartifacts.outputs.commitish }}'
             });
@@ -299,7 +305,7 @@ jobs:
           type: 'Release'
           projects: ${{ matrix.project }}
           deliveryTarget: 'NuGet'
-          artifacts: ${{ github.event.inputs.appVersion }}
+          artifacts: ${{ github.event.inputs.buildVersion }}
           atypes: 'Apps,TestApps'
 
       - name: Deliver to Storage
@@ -312,7 +318,7 @@ jobs:
           type: 'Release'
           projects: ${{ matrix.project }}
           deliveryTarget: 'Storage'
-          artifacts: ${{ github.event.inputs.appVersion }}
+          artifacts: ${{ github.event.inputs.buildVersion }}
           atypes: 'Apps,TestApps,Dependencies'
 
   CreateReleaseBranch:
@@ -366,6 +372,7 @@ jobs:
           shell: pwsh
           token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
           versionNumber: ${{ github.event.inputs.updateVersionNumber }}
+          skipUpdatingDependencies: ${{ github.event.inputs.skipUpdatingDependencies }}
           directCommit: ${{ github.event.inputs.directCommit }}
 
   PostProcess:

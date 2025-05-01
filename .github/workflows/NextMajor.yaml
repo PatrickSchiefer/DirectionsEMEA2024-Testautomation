@@ -26,6 +26,7 @@ jobs:
       projectDependenciesJson: ${{ steps.determineProjectsToBuild.outputs.ProjectDependenciesJson }}
       buildOrderJson: ${{ steps.determineProjectsToBuild.outputs.BuildOrderJson }}
       workflowDepth: ${{ steps.DetermineWorkflowDepth.outputs.WorkflowDepth }}
+      artifactsRetentionDays: ${{ steps.DetermineWorkflowDepth.outputs.ArtifactsRetentionDays }}
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
     steps:
       - name: Dump Workflow Information
@@ -49,11 +50,30 @@ jobs:
         uses: freddydk/AL-Go/Actions/ReadSettings@customize
         with:
           shell: pwsh
+          get: useGitSubmodules,shortLivedArtifactsRetentionDays
+
+      - name: Read submodules token
+        id: ReadSubmodulesToken
+        if: env.useGitSubmodules != 'false' && env.useGitSubmodules != ''
+        uses: freddydk/AL-Go/Actions/ReadSecrets@customize
+        with:
+          shell: pwsh
+          gitHubSecrets: ${{ toJson(secrets) }}
+          getSecrets: '-gitSubmodulesToken'
+
+      - name: Checkout Submodules
+        if: env.useGitSubmodules != 'false' && env.useGitSubmodules != ''
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          lfs: true
+          submodules: ${{ env.useGitSubmodules }}
+          token: '${{ fromJson(steps.ReadSubmodulesToken.outputs.Secrets).gitSubmodulesToken }}'
 
       - name: Determine Workflow Depth
         id: DetermineWorkflowDepth
         run: |
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "WorkflowDepth=$($env:workflowDepth)"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "ArtifactsRetentionDays=$($env:shortLivedArtifactsRetentionDays)"
 
       - name: Determine Projects To Build
         id: determineProjectsToBuild
@@ -80,8 +100,9 @@ jobs:
       buildMode: ${{ matrix.buildMode }}
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,codeSignCertificateUrl,*codeSignCertificatePassword,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
-      publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
+      artifactsRetentionDays: ${{ fromJson(needs.Initialization.outputs.artifactsRetentionDays) }}
       artifactsNameSuffix: 'NextMajor'
+      needsContext:  ${{ toJson(needs) }}
 
   PostProcess:
     needs: [ Initialization, Build ]
