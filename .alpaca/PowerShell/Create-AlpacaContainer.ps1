@@ -2,7 +2,7 @@ param (
     [string]$token
 )
 
-Import-Module ".\.alpaca\PowerShell\module\alpaca-functions.psd1" -Scope Global -Force
+Import-Module ".\.alpaca\PowerShell\module\alpaca-functions.psd1" -Scope Global -Force -DisableNameChecking
 
 $owner = $Env:GITHUB_REPOSITORY_OWNER
 $repository = $Env:GITHUB_REPOSITORY
@@ -12,9 +12,10 @@ $branch = $Env:GITHUB_REF_NAME
 
 Write-Host "Starting container for $owner/$repository and ref $branch"
 
-
 $headers = Get-AuthenticationHeader -token $token -owner $owner -repository $repository
-$headers.add("Content-Type","application/json")
+$headers.add("Content-Type", "application/json")
+
+$config = Translate-WorkflowName-To-ConfigName 
 
 $body = @"
 {
@@ -23,6 +24,7 @@ $body = @"
         "repo": "$repository",
         "branch": "$branch"
     },
+    "containerConfiguration": "$config",
     "workflow": {
         "actor": "$($Env:GITHUB_ACTOR)",
         "workflowName": "$($Env:GITHUB_WORKFLOW)",
@@ -39,13 +41,10 @@ $QueryParams = @{
 }
 $apiUrl = Get-K8sEndpointUrlWithParam -controller "Container" -endpoint "GitHub/Build" -QueryParams $QueryParams
 $containerConfig = Invoke-RestMethod $apiUrl -Method 'POST' -Headers $headers -Body $body -AllowInsecureRedirect
-$containerID=$containerConfig.id
-$containerUser=$containerConfig.username
-$containerPassword=$containerConfig.Password
-$containerURL=$containerConfig.webUrl
-
-
-
+$containerID = $containerConfig.id
+$containerUser = $containerConfig.username
+$containerPassword = $containerConfig.Password
+$containerURL = $containerConfig.webUrl
 
 Write-Output containerID=$containerID >> $ENV:GITHUB_OUTPUT
 Write-Output containerUser=$containerUser >> $ENV:GITHUB_OUTPUT

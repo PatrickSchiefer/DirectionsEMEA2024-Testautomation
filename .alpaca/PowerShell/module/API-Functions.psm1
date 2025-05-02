@@ -1,7 +1,12 @@
 function Get-BackendURL {
     $AlpacaSettings = Get-AlpacaSettings
     $BackendURL= $AlpacaSettings.backendURL
-    if ($BackendURL -notlike "*/") { $BackendURL = $BackendURL + "/"}
+    if ([string]::IsNullOrWhiteSpace($BackendURL)) {
+        $BackendURL = "https://cosmo-alpaca-enterprise.westeurope.cloudapp.azure.com/"
+    }
+    elseif ($BackendURL -notlike "*/") {
+        $BackendURL = $BackendURL + "/"
+    }
     return $BackendURL
 }
 
@@ -68,3 +73,13 @@ function Get-AuthenticationHeader {
 }
 
 Export-ModuleMember -Function Get-AuthenticationHeader
+
+function Translate-WorkflowName-To-ConfigName {
+    switch($ENV:GITHUB_WORKFLOW) {
+        "NextMajor" { return "NextMajor" }
+        "NextMinor" { return "NextMinor" }
+        default { return "current" }
+    }
+}
+
+Export-ModuleMember -Function Translate-WorkflowName-To-ConfigName

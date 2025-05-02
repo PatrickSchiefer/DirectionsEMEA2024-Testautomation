@@ -20,12 +20,13 @@
     CompanyName       = 'Cosmo Consult '
     
     # Copyright statement for this module
-    Copyright         = '© 2024 Cosmo Consult. All rights reserved.'
+    Copyright         = '© 2025 Cosmo Consult. All rights reserved.'
     
 
     NestedModules     = @('API-Functions.psm1',
                           'Get-AlpacaSettings.psm1',
                           'Get-ExtendedErrorMessage.psm1',
+                          'Get-Dependency-Apps.psm1',
                           'Publish-BCAppToDevEndpoint.psm1',
                           'Wait-ForAlpacaContainer.psm1',
                           'Wait-ForImage.psm1')
